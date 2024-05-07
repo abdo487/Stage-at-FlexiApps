@@ -36,7 +36,11 @@ const corsOptions = {
 };
 App.use(cors(corsOptions));
 
+// json middleware
 App.use(express.json());
+
+// assets
+App.use(express.static("public"));
 
 // Importing the routes
 import Auth from "./Routes/Auth.js";

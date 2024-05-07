@@ -11,16 +11,29 @@ const storage = multer.memoryStorage();
 export const upload = multer({ storage: storage });
 
 export const products_list = async (req, res) => {
+  let { page, limit } = req.query;
   try {
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
     await Database.getInstance();
-    const products = await Product.find();
+    const products = await Product.find()
+      .skip((page - 1) * limit)
+      .limit(limit);
     return res
       .status(200)
       .json(
         HttpResponse(
           ResponseStatus.SUCCESS,
           "Products fetched successfully",
-          products ? products : []
+          {
+            products,
+            pagination: {
+              page,
+              limit,
+              total_products: await Product.countDocuments(),
+              total_pages: Math.ceil(await Product.countDocuments() / limit),
+            }
+          }
         )
       );
   } catch (error) {
