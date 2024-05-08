@@ -18,6 +18,11 @@ const productSchema = new Schema({
     images: {
         type: [String],
     },
+    createdBy: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
 }, { timestamps: true });
 
 export default models.Product || model('Product', productSchema);

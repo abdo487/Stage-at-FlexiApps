@@ -7,9 +7,10 @@ import path from "path";
 import fs from "fs";
 import Database from "../Database.js";
 
-const storage = multer.memoryStorage();
-export const upload = multer({ storage: storage });
+const storage = multer.memoryStorage(); // This is the configuration for multer to store files in memory
+export const upload = multer({ storage: storage }); // This is the configuration for multer to store files in disk
 
+// This is the controller for the products list
 export const products_list = async (req, res) => {
   let { page, limit } = req.query;
   try {
@@ -19,23 +20,17 @@ export const products_list = async (req, res) => {
     const products = await Product.find()
       .skip((page - 1) * limit)
       .limit(limit);
-    return res
-      .status(200)
-      .json(
-        HttpResponse(
-          ResponseStatus.SUCCESS,
-          "Products fetched successfully",
-          {
-            products,
-            pagination: {
-              page,
-              limit,
-              total_products: await Product.countDocuments(),
-              total_pages: Math.ceil(await Product.countDocuments() / limit),
-            }
-          }
-        )
-      );
+    return res.status(200).json(
+      HttpResponse(ResponseStatus.SUCCESS, "Products fetched successfully", {
+        products,
+        pagination: {
+          page,
+          limit,
+          total_products: await Product.countDocuments(),
+          total_pages: Math.ceil((await Product.countDocuments()) / limit),
+        },
+      })
+    );
   } catch (error) {
     return res
       .status(500)
@@ -43,6 +38,7 @@ export const products_list = async (req, res) => {
   }
 };
 
+// This is the midlware for validating the product details before adding it to the database
 export const validateProduct = (req, res, next) => {
   const { name, price, description } = req.body;
   const images = req.files ? req.files : [];
@@ -89,6 +85,7 @@ export const validateProduct = (req, res, next) => {
   next();
 };
 
+// This function generates a unique name for the file
 function generateFileName(originalname) {
   let arrName = originalname.split(".");
   let salt = Math.random().toString(36).substring(7);
@@ -98,6 +95,7 @@ function generateFileName(originalname) {
   return saveAs;
 }
 
+// This function saves the file to a given location
 function saveFile(file, location) {
   let saveAs = generateFileName(file.originalname);
   let imageBuffer = file.buffer;
@@ -106,6 +104,7 @@ function saveFile(file, location) {
   return saveAs;
 }
 
+// This is the controller for adding a product
 export const add_product = async (req, res) => {
   try {
     await Database.getInstance();
@@ -113,7 +112,13 @@ export const add_product = async (req, res) => {
     const images = req.files.map((file) => {
       return saveFile(file, "./public/products-images");
     });
-    const product = await Product.create({ name, price, description, images });
+    const product = await Product.create({
+      name,
+      price,
+      description,
+      images,
+      createdBy: req.user._id,
+    });
     return res
       .status(201)
       .json(
@@ -130,6 +135,7 @@ export const add_product = async (req, res) => {
   }
 };
 
+// This is the midlware for getting a single product
 export const findProductById = async (req, res, next, id) => {
   try {
     await Database.getInstance();
@@ -148,6 +154,7 @@ export const findProductById = async (req, res, next, id) => {
   }
 };
 
+// This is the controller for updating a product
 export const update_product = async (req, res) => {
   try {
     await Database.getInstance();
@@ -191,6 +198,7 @@ export const update_product = async (req, res) => {
   }
 };
 
+// This is the controller for deleting a single product
 export const delete_product = async (req, res) => {
   try {
     await Database.getInstance();
